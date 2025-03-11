@@ -36,18 +36,16 @@ async def upload_image(
         # Generate unique filename with UUID
         file_extension = Path(image.filename).suffix
         unique_filename = f"{str(uuid.uuid4())}{file_extension}"
-        temp_file_path = os.path.join(upload_dir, unique_filename)
+        temp_file_path = os.path.abspath(os.path.join(upload_dir, unique_filename))
 
         # Save the file
         async with aiofiles.open(temp_file_path, "wb") as out_file:
             content = await image.read()
             await out_file.write(content)
 
-        # Store the path in agent's state
         agent.state.set_path(temp_file_path)
-
-        # Process the image here if needed
-        # ... add your processing logic ...
+        
+        await agent.execute(f"given your context, analyze the image, the absolute path of the image is {agent.state.get_path()}")
 
         print(f"image path: {temp_file_path}")
         response_data = {
