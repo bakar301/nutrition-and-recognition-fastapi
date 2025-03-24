@@ -4,6 +4,8 @@ from llama_index.core.program import MultiModalLLMCompletionProgram
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.output_parsers import PydanticOutputParser
 
+from app.state import AnalyzerState
+
 import os
 
 
@@ -16,41 +18,43 @@ class AnalysisResponse(BaseModel):
     recipe: dict | None = Field(default=None, description="Detailed recipe including ingredients and instructions")
     error: str | None = Field(default=None, description="Error message if not a food image")
 
-def analyzeImage(image_path: str) -> AnalysisResponse:
+def analyzeImage(state: AnalyzerState, image_path: str) -> AnalysisResponse:
     try:
         print(f"Path: {image_path}")
         reader = SimpleDirectoryReader(input_files=[image_path], filename_as_id=True)
         documents = reader.load_data()
         image_document = documents[0]
         prompt_template_str = """\
-Analyze this image carefully and determine:
+Analyze this image carefully and determine if it contains food or not.
 
-if this is a food or not, if not then the response should be
-
+If this is NOT a food image, respond with:
 {
     "context": "small explanation of the image",
-    "error": "NOT AN IMAGE"
+    "error": "respective error message"
 }
 
-if this is a food then response should be
-
+If this IS a food image, respond with:
 {
     "context": "small explanation of the image",
     "food": "yes",
     "summary": "summary of the image",
-    "calories": "approximate calories as integer",
+    "calories": approximate_calories_as_integer,
     "recipe": {
-        "ingredients": ["list of ingredients with quantities"],
-        "instructions": ["step by step cooking instructions"],
-        "cooking_time": "approximate cooking time in minutes",
+        "ingredients": ["ingredient1 with quantity", "ingredient2 with quantity"],
+        "instructions": ["step1", "step2", "step3"],
+        "cooking_time": "30",
         "difficulty_level": "easy/medium/hard"
     }
 }
+
+Keep the response concise and ensure all JSON fields are properly formatted.
 """
         mllm = OpenAIMultiModal(
-            model='gpt-4o-mini',
+            model='gpt-4o-mini',  # Updated to the correct model name
             api_key=os.environ.get("OPENAI_API_KEY"),
+            max_new_tokens=4000  # Added max tokens to ensure complete response
         )
+        
         llm_program = MultiModalLLMCompletionProgram.from_defaults(
             output_parser=PydanticOutputParser(AnalysisResponse),
             image_documents=[image_document],
@@ -59,22 +63,36 @@ if this is a food then response should be
             verbose=True,
         )
 
-        medical_data = llm_program()
-        print(medical_data)
+        try:
+            medical_data = llm_program()
+            print("Raw LLM response:", medical_data)
 
-        response = AnalysisResponse(
-            context=medical_data.context,
-            food=medical_data.food if hasattr(medical_data, 'food') else None,
-            summary=medical_data.summary if hasattr(medical_data, 'summary') else None,
-            calories=medical_data.calories if hasattr(medical_data, 'calories') else None,
-            recipe=medical_data.recipe if hasattr(medical_data, 'recipe') else None,
-            error=medical_data.error if hasattr(medical_data, 'error') else None
-        )
-        print(f"Analysis response is: {response}")
-        return response
+            response = AnalysisResponse(
+                context=getattr(medical_data, 'context', "No context provided"),
+                food=getattr(medical_data, 'food', None),
+                summary=getattr(medical_data, 'summary', None),
+                calories=getattr(medical_data, 'calories', None),
+                recipe=getattr(medical_data, 'recipe', None),
+                error=getattr(medical_data, 'error', None)
+            )
+            print(f"Analysis response is: {response}")
+            state.set_analysis_result(response.dict())  # Convert to dict before storing
+            return response
+            
+        except Exception as e:
+            print(f"Error processing LLM response: {e}")
+            error_response = AnalysisResponse(
+                context="Error processing image analysis",
+                error=f"Failed to process image analysis: {str(e)}"
+            )
+            state.set_analysis_result(error_response.dict())  # Convert to dict before storing
+            return error_response
+            
     except Exception as e:
         print(f"Error analyzing image: {e}")
-        return AnalysisResponse(
+        error_response = AnalysisResponse(
             context="Failed to process image",
-            error="NOT AN IMAGE"
+            error=f"Image processing error: {str(e)}"
         )
+        state.set_analysis_result(error_response.dict())  # Convert to dict before storing
+        return error_response

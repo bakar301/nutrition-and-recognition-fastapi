@@ -45,12 +45,13 @@ async def upload_image(
 
         agent.state.set_path(temp_file_path)
         
-        await agent.execute(f"given your context, analyze the image, the absolute path of the image is {agent.state.get_path()}")
+        response = await agent.execute(f"given your context, analyze the image, the absolute path of the image is {agent.state.get_path()}")
 
         print(f"image path: {temp_file_path}")
         response_data = {
             "original_filename": image.filename,
             "saved_filename": unique_filename,
+            "response": response,
             "content_type": image.content_type,
         }
 

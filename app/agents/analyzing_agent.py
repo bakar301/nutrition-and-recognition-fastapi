@@ -17,7 +17,7 @@ class AnalyzingAgent:
         self.state = state
         self.tools = [
             FunctionTool(
-                fn=analyzeImage,
+                fn=lambda *args, **kwargs: analyzeImage(self.state, *args, **kwargs),
                 metadata=ToolMetadata(
                     name="analyze_image",
                     description="Analyze the image and return the food details",
@@ -58,7 +58,7 @@ class AnalyzingAgent:
                 
                 return {
                     "status": "success",
-                    "response": self.state.get_content()
+                    "response": self.state.get_analysis_result()
                 }
         except Exception as e:
             return {
