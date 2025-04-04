@@ -12,7 +12,9 @@ import os
 class AnalysisResponse(BaseModel):
     """Response model for image analysis"""
     context: str = Field(description="Small explanation of the image")
+    name: str | None = Field(default=None, description="'yes' name of the object or thing in this image or if in  image they are human then tell their gender, otherwise None")
     food: str | None = Field(default=None, description="'yes' if the image contains food, otherwise None")
+    color: str | None = Field(default=None, description="'yes' if the image contains color, otherwise None")
     summary: str | None = Field(default=None, description="Summary of the food image if applicable")
     calories: int | None = Field(default=None, description="Approximate calories in the food")
     recipe: dict | None = Field(default=None, description="Detailed recipe including ingredients and instructions")
@@ -28,15 +30,20 @@ def analyzeImage(state: AnalyzerState, image_path: str) -> AnalysisResponse:
 Analyze this image carefully and determine if it contains food or not.
 
 If this is NOT a food image, respond with:
-{
+{   
+    "name": "yes" if the image contains a name or if in  image they are human then tell their gender, otherwise None,
     "context": "small explanation of the image",
-    "error": "respective error message"
+    "error": "respective error message",
+    "summary": "summary of the image",
+    "color":"color of the image",
 }
 
 If this IS a food image, respond with:
 {
     "context": "small explanation of the image",
+    "name": "yes" if the image contains a name or if in  image they are human then tell their gender, otherwise if they cntain food anykind of food then tell their food name or they contain any kind of thing like electronice or something tell their name,
     "food": "yes",
+    "color":""color of the image",
     "summary": "summary of the image",
     "calories": approximate_calories_as_integer,
     "recipe": {
@@ -69,7 +76,9 @@ Keep the response concise and ensure all JSON fields are properly formatted.
 
             response = AnalysisResponse(
                 context=getattr(medical_data, 'context', "No context provided"),
+                name=getattr(medical_data, 'name', None),
                 food=getattr(medical_data, 'food', None),
+                color=getattr(medical_data, 'color', None),
                 summary=getattr(medical_data, 'summary', None),
                 calories=getattr(medical_data, 'calories', None),
                 recipe=getattr(medical_data, 'recipe', None),
