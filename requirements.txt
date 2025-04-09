@@ -2,6 +2,3 @@ fastapi
 uvicorn
 llama-index
 openai
-pillow
-python-multipart
-aiofiles
