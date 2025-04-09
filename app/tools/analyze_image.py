@@ -31,7 +31,7 @@ Analyze this image carefully and determine if it contains food or not.
 
 If this is NOT a food image, respond with:
 {   
-    "name": "yes" if the image contains a name or if in  image they are human then tell their gender or if they are other thing then tell their name, otherwise None,
+    "name": "yes" if the image contains a name or if in  image they are human then tell their gender or if they are other thing like electronice or something then tell their name, otherwise None,
     "context": "small explanation of the image",
     "error": "respective error message",
     "summary": "summary of the image",
@@ -41,7 +41,7 @@ If this is NOT a food image, respond with:
 If this IS a food image, respond with:
 {
     "context": "small explanation of the image",
-    "name": "yes" if the image contains a name or if in  image they are human then tell their gender, otherwise if they cntain food anykind of food then tell their food name or they contain any kind of thing like electronice or something tell their name,otherwise None,
+    "name": "yes" if the image contains a name or if in  image they are human then tell their gender, otherwise if they cntain food(nihari,biryani,pizza,burger,roti,alloo gobi,mutton,e.g pakistani food) anykind of food but focus on desi pakistani food then tell their food name or they contain any kind of thing like electronice or something tell their name,otherwise None,
     "food": "yes",
     "color":""color of the image",
     "summary": "summary of the image",
